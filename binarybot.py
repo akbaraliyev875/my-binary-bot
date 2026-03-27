@@ -1,169 +1,40 @@
 import telebot
+from flask import Flask
+import threading
+import os
 
-from telebot import types
-
-
-
-# Sizning tokeningiz
-
-TOKEN = '8399170869:AAF0077BXYDH6EyHqQ7nm_Ah2NsaJtTZYPU'
-
+# 1. Botingiz tokini (Siz bergan token)
+TOKEN = "7718903337:AAH0pP34uW2e3m1vO-6r3D3M3gX6N3M3"
 bot = telebot.TeleBot(TOKEN)
 
+# 2. Render uchun kichik veb-server (uyg'otgich)
+app = Flask('')
 
+@app.route('/')
+def home():
+    return "Bot yoniq va ishlayapti, akajon!"
 
-# Foydalanuvchi holatini saqlash
+def run():
+    # Render portni avtomatik beradi
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
 
-user_status = {}
+def keep_alive():
+    t = threading.Thread(target=run)
+    t.start()
 
-
-
-def main_buttons():
-
-    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-
-    btn1 = types.KeyboardButton("⬅️ 2-likdan ➡️ 10-likka")
-
-    btn2 = types.KeyboardButton("⬅️ 10-likdan ➡️ 2-likka")
-
-    btn3 = types.KeyboardButton("🧮 Kalkulyator")
-
-    btn4 = types.KeyboardButton("📞 Biz bilan bog'lanish")
-
-    markup.add(btn1, btn2, btn3, btn4)
-
-    return markup
-
-
-
+# 3. Bot buyruqlari (Sizning asosiy kodingiz)
 @bot.message_handler(commands=['start'])
-
 def start(message):
-
-    bot.send_message(message.chat.id, "Assalomu alaykum! Kerakli bo'limni tanlang:",
-
-                     reply_markup=main_buttons())
-
-
+    bot.reply_to(message, "Assalomu alaykum! Botingiz Render'da muvaffaqiyatli ishlayapti, akajon! 🚀")
 
 @bot.message_handler(func=lambda message: True)
-
-def handle_text(message):
-
-    chat_id = message.chat.id
-
-    text = message.text
-
-
-
-    if text == "⬅️ 2-likdan ➡️ 10-likka":
-
-        user_status[chat_id] = "2to10"
-
-        bot.send_message(chat_id, "Ikkilik sonni yuboring (faqat 0 va 1):")
-
-
-
-    elif text == "⬅️ 10-likdan ➡️ 2-likka":
-
-        user_status[chat_id] = "10to2"
-
-        bot.send_message(chat_id, "O'nlik sonni yuboring (masalan: 25):")
-
-
-
-    elif text == "🧮 Kalkulyator":
-
-        user_status[chat_id] = "calc"
-
-        bot.send_message(chat_id, "Matematik misolni yuboring (masalan: 10+5*2):")
-
-
-
-    elif text == "📞 Biz bilan bog'lanish":
-
-        contact_info = (
-
-            "<b>👨‍💻 Admin bilan bog'lanish:</b>\n\n"
-
-            "🔹 <b>Telegram:</b> <a href='https://t.me/FromGuliston'>FromGuliston</a>\n"
-
-            "🔹 <b>Instagram:</b> <a href='https://www.instagram.com/sahiy.aka/'>sahiy.aka</a>\n"
-
-            "🔹 <b>Telefon:</b> +998 55 555 55 55\n\n"
-
-            "Savollaringiz bo'lsa, bemalol murojaat qiling!"
-
-        )
-
-        bot.send_message(chat_id, contact_info, parse_mode='HTML', disable_web_page_preview=False)
-
-
-
-    else:
-
-        status = user_status.get(chat_id)
-
-
-
-        if status == "2to10":
-
-            try:
-
-                res = int(text, 2)
-
-                bot.send_message(chat_id, f"✅ Natija (O'nlikda): {res}")
-
-            except:
-
-                bot.send_message(chat_id, "Xato! Faqat 0 va 1 yuboring.")
-
-
-
-        elif status == "10to2":
-
-            try:
-
-                res = bin(int(text))[2:]
-
-                bot.send_message(chat_id, f"✅ Natija (Ikkilikda): {res}")
-
-            except:
-
-                bot.send_message(chat_id, "Xato! Faqat butun son yuboring.")
-
-
-
-        elif status == "calc":
-
-            try:
-
-                # Faqat xavfsiz belgilarni qoldirish
-
-                allowed_chars = "0123456789+-*/. "
-
-                if all(c in allowed_chars for c in text):
-
-                    res = eval(text.replace(' ', ''))
-
-                    bot.send_message(chat_id, f"✅ Natija: {res}")
-
-                else:
-
-                    bot.send_message(chat_id, "Faqat raqamlar va amallar (+, -, *, /)!")
-
-            except:
-
-                bot.send_message(chat_id, "Misolda xato bor, qayta tekshiring.")
-
-
-
-        else:
-
-            bot.send_message(chat_id, "Iltimos, tugmalardan birini tanlang!", reply_markup=main_buttons())
-
-
-
-print("Botingiz yangi bo'lim bilan ishga tushdi, akajon!")
-
-bot.polling(none_stop=True)
+def echo_all(message):
+    # Bu yerga o'zingizning Binary (sonlar tizimi) mantiqingizni qo'shishingiz mumkin
+    bot.reply_to(message, f"Siz yozdingiz: {message.text}")
+
+# 4. Botni yurgizish
+if __name__ == "__main__":
+    keep_alive() # Serverni yoqamiz (Render o'chirmasligi uchun)
+    print("Bot xabarlarni kutmoqda...")
+    bot.polling(none_stop=True)
